@@ -1,0 +1,22 @@
+PODS:
+  - bio_secure_kvs (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+
+DEPENDENCIES:
+  - bio_secure_kvs (from `Flutter/ephemeral/.symlinks/plugins/bio_secure_kvs/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+
+EXTERNAL SOURCES:
+  bio_secure_kvs:
+    :path: Flutter/ephemeral/.symlinks/plugins/bio_secure_kvs/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+
+SPEC CHECKSUMS:
+  bio_secure_kvs: 54c750a7a9e2a49ed418b8dab434f2ca9223a54c
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+
+PODFILE CHECKSUM: 236401fc2c932af29a9fcf0e97baeeb2d750d367
+
+COCOAPODS: 1.12.1
