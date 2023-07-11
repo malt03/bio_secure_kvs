@@ -16,15 +16,15 @@ abstract class BioSecureKvsPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<void> set(String key, List<int> value) {
+  Future<void> set(String service, String key, List<int> value) {
     throw UnimplementedError('set() has not been implemented.');
   }
 
-  Future<List<int>?> get(String key) {
+  Future<List<int>?> get(String service, String key) {
     throw UnimplementedError('get() has not been implemented.');
   }
 
-  Future<bool> delete(String key) {
+  Future<bool> delete(String service, String key) {
     throw UnimplementedError('delete() has not been implemented.');
   }
 }

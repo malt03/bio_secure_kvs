@@ -8,18 +8,18 @@ class MethodChannelBioSecureKvs extends BioSecureKvsPlatform {
   final methodChannel = const MethodChannel('bio_secure_kvs');
 
   @override
-  set(key, value) {
-    return methodChannel.invokeMethod<void>('set', [key, value]);
+  set(service, key, value) {
+    return methodChannel.invokeMethod<void>('set', [service, key, value]);
   }
 
   @override
-  get(key) {
-    return methodChannel.invokeMethod<List<int>>('get', [key]);
+  get(service, key) {
+    return methodChannel.invokeMethod<List<int>>('get', [service, key]);
   }
 
   @override
-  delete(key) async {
-    final result = await methodChannel.invokeMethod<bool>('delete', [key]);
+  delete(service, key) async {
+    final result = await methodChannel.invokeMethod<bool>('delete', [service, key]);
     return result!;
   }
 }

@@ -12,9 +12,9 @@ void main() {
 class MyApp extends HookWidget {
   const MyApp({super.key});
 
-  final _bioSecureKvsPlugin = const BioSecureKvs();
+  final _bioSecureKvsPlugin = const BioSecureKvs("com.malt03.bio_secure_kvs");
 
-  final _key = 'com.malt03.bio_secure_kvs.dummy';
+  final _key = 'dummy-key';
 
   @override
   Widget build(BuildContext context) {
