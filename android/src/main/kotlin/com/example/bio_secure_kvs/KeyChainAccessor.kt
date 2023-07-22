@@ -1,15 +1,22 @@
 package com.example.bio_secure_kvs
 
 import android.content.Context
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties.*
 import android.util.Base64
+import androidx.annotation.RequiresApi
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.security.KeyStore
 import java.util.concurrent.Executor
 import javax.crypto.Cipher
@@ -23,7 +30,7 @@ val Context.vioSecureKVS: DataStore<Preferences> by preferencesDataStore(name = 
 class KeyChainAccessor {
   sealed class Operation {}
   class Get(val encrypted: ByteArray, val callback: (ByteArray?) -> Unit): Operation()
-  class Set(val context: Context, val key: String, val plain: ByteArray, callback: () -> Unit): Operation()
+  class Set(val context: Context, val key: String, val plain: ByteArray, val callback: () -> Unit): Operation()
 
   companion object {
     private var operation: Operation? = null
@@ -33,15 +40,16 @@ class KeyChainAccessor {
 
     fun get(context: Context, activity: FragmentActivity, service: String, key: String, callback: (ByteArray?) -> Unit) {
       context.vioSecureKVS.data.map {
-        val encrypted = Base64.decode(it[key + "." + service], Base64.DEFAULT)
+        val encrypted = Base64.decode(it[stringPreferencesKey("$key.$service")], Base64.DEFAULT)
         val ivEnd = encrypted[0].toUInt().toInt() + 1
         val iv = encrypted.sliceArray(1 until ivEnd)
-        operation = Get(context, encrypted.sliceArray(ivEnd until encrypted.size), callback)
+        operation = Get(encrypted.sliceArray(ivEnd until encrypted.size), callback)
 
         val cipher = getCipher()
         val secretKey = getOrGenerateKey(service)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
 
+        val biometricPrompt = getBiometricPrompt(context, activity)
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
           .setTitle("Biometric login for my app")
           .setSubtitle("Log in using your biometric credential")
@@ -52,13 +60,13 @@ class KeyChainAccessor {
     }
 
     fun set(context: Context, activity: FragmentActivity, service: String, key: String, value: ByteArray, callback: () -> Unit) {
-      operation = Set(key + "." + service, value, callback)
+      operation = Set(context, "$key.$service", value, callback)
 
       val cipher = getCipher()
       val secretKey = getOrGenerateKey(service)
       cipher.init(Cipher.ENCRYPT_MODE, secretKey)
       
-      val biometricPrompt = getBiometricPrompt(activity)
+      val biometricPrompt = getBiometricPrompt(context, activity)
       val promptInfo = BiometricPrompt.PromptInfo.Builder()
         .setTitle("Biometric login for my app")
         .setSubtitle("Log in using your biometric credential")
@@ -80,7 +88,7 @@ class KeyChainAccessor {
       return created
     }
 
-    private fun getBiometricPrompt(activity: FragmentActivity): BiometricPrompt {
+    private fun getBiometricPrompt(context: Context, activity: FragmentActivity): BiometricPrompt {
       val tmp = biometricPrompt
       if (tmp != null) { return tmp }
 
@@ -99,9 +107,7 @@ class KeyChainAccessor {
         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
           super.onAuthenticationSucceeded(result)
 
-          val o = operation
-          if (o == null) return;
-
+          val o = operation ?: return
           val cipher = result.cryptoObject!!.cipher!!
 
           when (o) {
@@ -112,15 +118,18 @@ class KeyChainAccessor {
               val iv = cipher.iv
               val ivSize = byteArrayOf(iv.size.toUInt().toByte())
               val encrypted = ivSize + iv + cipher.doFinal(o.plain)
-              o.context.vioSecureKVS.edit {
-                it[o.key] = Base64.encodeToString(encrypted, Base64.DEFAULT)
+              GlobalScope.launch {
+                o.context.vioSecureKVS.edit {
+                  it[stringPreferencesKey(o.key)] = Base64.encodeToString(encrypted, Base64.DEFAULT)
+                }
+                o.callback()
               }
-              o.callback()
             }
           }
         }
       }
-      val created = BiometricPrompt(this, executor, callback)
+
+      return BiometricPrompt(activity, getExecutor(context), callback)
     }
 
     private fun generateSecretKey(keyName: String): SecretKey {
@@ -143,7 +152,7 @@ class KeyChainAccessor {
       return keyGenerator.generateKey()
     }
 
-    private fun getOrGenerateKey(servicekeyName: String): SecretKey {
+    private fun getOrGenerateKey(keyName: String): SecretKey {
       val keyStore = KeyStore.getInstance("AndroidKeyStore")
       keyStore.load(null)
 
