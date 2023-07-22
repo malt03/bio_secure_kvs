@@ -43,12 +43,31 @@ class BioSecureKvsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
       }
       "delete" -> {
-        result.success(KeyChainAccessor.delete(context, service, key))
+        result.success(false)
       }
       else -> {
         result.notImplemented()
       }
     }
+
+    
+    // when (call.method) {
+    //   "get" -> {
+    
+    //   }
+    //   "set" -> {
+    //     val value = arguments[2] as ByteArray
+    //     KeyChainAccessor.set(context, activity, service, key, value) {
+    //       result.success(null)
+    //     }
+    //   }
+    //   "delete" -> {
+    //     result.success(KeyChainAccessor.delete(context, service, key))
+    //   }
+    //   else -> {
+    //     result.notImplemented()
+    //   }
+    // }
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
