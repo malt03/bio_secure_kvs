@@ -1,12 +1,10 @@
 package com.example.bio_secure_kvs
 
 import android.content.Context
-import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties.*
 import android.util.Base64
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
@@ -24,9 +22,7 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
-
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 val Context.vioSecureKVS: DataStore<Preferences> by preferencesDataStore(name = "com.malt.vio_secure_kvs")
 
@@ -68,9 +64,11 @@ class KeyChainAccessor {
           .build()
 
         Log.d("bio_secure_kvs", "get4")
-        biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
 
-        Log.d("bio_secure_kvs", "get5")
+        activity.runOnUiThread {
+          biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
+          Log.d("bio_secure_kvs", "get5")
+        }
       }
     }
 
