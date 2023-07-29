@@ -38,23 +38,17 @@ class KeyChainAccessor {
     private var biometricPrompt: BiometricPrompt? = null
 
     fun get(context: Context, activity: FragmentActivity, service: String, key: String, callback: (ByteArray?) -> Unit) {
-      Log.d("bio_secure_kvs", "get")
       GlobalScope.launch {
         val saved = context.vioSecureKVS.data.map { it[stringPreferencesKey("$key.$service")] }.first()
-        Log.d("bio_secure_kvs", "get1")
         
         val encrypted = Base64.decode(saved, Base64.DEFAULT)
         val ivEnd = encrypted[0].toUInt().toInt() + 1
         val iv = encrypted.sliceArray(1 until ivEnd)
         operation = Get(encrypted.sliceArray(ivEnd until encrypted.size), callback)
 
-        Log.d("bio_secure_kvs", "get2")
-
         val cipher = getCipher()
         val secretKey = getOrGenerateKey(service)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
-
-        Log.d("bio_secure_kvs", "get3")
 
         val biometricPrompt = getBiometricPrompt(context, activity)
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
@@ -63,11 +57,8 @@ class KeyChainAccessor {
           .setNegativeButtonText("Use account password")
           .build()
 
-        Log.d("bio_secure_kvs", "get4")
-
         activity.runOnUiThread {
           biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
-          Log.d("bio_secure_kvs", "get5")
         }
       }
     }
