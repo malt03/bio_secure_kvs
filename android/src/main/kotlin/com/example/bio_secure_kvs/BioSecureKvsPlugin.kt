@@ -43,7 +43,9 @@ class BioSecureKvsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
       }
       "delete" -> {
-        result.success(false)
+        KeyChainAccessor.delete(context, service, key) {
+          result.success(it)
+        }
       }
       else -> {
         result.notImplemented()

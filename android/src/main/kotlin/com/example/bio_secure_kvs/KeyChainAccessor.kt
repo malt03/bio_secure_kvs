@@ -40,6 +40,10 @@ class KeyChainAccessor {
     fun get(context: Context, activity: FragmentActivity, service: String, key: String, callback: (ByteArray?) -> Unit) {
       GlobalScope.launch {
         val saved = context.vioSecureKVS.data.map { it[stringPreferencesKey("$key.$service")] }.first()
+        if (saved == null) {
+          callback(null)
+          return@launch
+        }
         
         val encrypted = Base64.decode(saved, Base64.DEFAULT)
         val ivEnd = encrypted[0].toUInt().toInt() + 1
@@ -79,8 +83,18 @@ class KeyChainAccessor {
       biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
     }
 
-    fun delete(context: Context, service: String, key: String): Boolean {
-      return false
+    fun delete(context: Context, service: String, key: String, callback: (Boolean) -> Unit) {
+      GlobalScope.launch {
+        context.vioSecureKVS.edit {
+          val k = stringPreferencesKey("$key.$service")
+          if (it.contains(k)) {
+            it.remove(k)
+            callback(true)
+          } else {
+            callback(false)
+          }
+        }
+      }
     }
 
     private fun getExecutor(context: Context): Executor {
