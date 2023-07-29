@@ -64,8 +64,6 @@ class KeyChainAccessor {
     }
 
     fun set(context: Context, activity: FragmentActivity, service: String, key: String, value: ByteArray, callback: () -> Unit) {
-      Log.d("bio_secure_kvs", "set")
-
       operation = Set(context, "$key.$service", value, callback)
 
       val cipher = getCipher()
@@ -126,7 +124,6 @@ class KeyChainAccessor {
               val encrypted = ivSize + iv + cipher.doFinal(o.plain)
               GlobalScope.launch {
                 o.context.vioSecureKVS.edit {
-                  Log.d("bio_secure_kvs", "set1")
                   it[stringPreferencesKey(o.key)] = Base64.encodeToString(encrypted, Base64.DEFAULT)
                 }
                 o.callback()
